@@ -4,6 +4,8 @@ A to-do web app. This repository currently contains the runnable project scaffol
 
 ## Install
 
+Use Node.js `^22.13.0 || ^24.0.0 || >=26.0.0` (22.13 or newer on the 22 line, 24, or 26 and newer). That is the range in `package.json` `engines`. Vite 8, Vitest 5, and ESLint 10 do not run on older Node.
+
 ```bash
 npm install
 npx playwright install chromium
