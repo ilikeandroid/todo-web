@@ -1,26 +1,63 @@
 import type { Task } from './types.ts'
 
-/** The only localStorage key this module reads or writes. */
+/** localStorage key for the task list. */
 export const TASKS_STORAGE_KEY = 'todo-web.tasks'
+
+/**
+ * localStorage key for a raw copy of unreadable task data.
+ * Written only when `todo-web.tasks` is not valid JSON or not a JSON array,
+ * and only when this key is not already set.
+ */
+export const TASKS_BACKUP_KEY = 'todo-web.tasks.backup'
 
 /**
  * Reads tasks from localStorage.
  *
- * Returns `[]` when the key is missing, the value is invalid JSON, the value
- * is not an array, any item has the wrong shape (including an empty `id`), or
- * localStorage throws (for example, access denied). Does not throw and does
- * not overwrite storage.
+ * A valid JSON array returns every well-formed task and skips malformed
+ * items, including an empty `id`. That stored array is left unchanged, and
+ * no backup is written.
+ *
+ * A missing key returns `[]` and does not write a backup. When the value is
+ * not valid JSON or not an array, the raw string is copied to
+ * `todo-web.tasks.backup` if that key is not already set, then `[]` is
+ * returned.
+ *
+ * Does not throw, including when reading storage or writing the backup throws.
  */
 export function loadTasks(): Task[] {
+  let raw: string | null
   try {
-    const raw = localStorage.getItem(TASKS_STORAGE_KEY)
-    if (raw === null) {
-      return []
-    }
-    return parseStoredTasks(raw)
+    raw = localStorage.getItem(TASKS_STORAGE_KEY)
   } catch {
     return []
   }
+
+  if (raw === null) {
+    return []
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    backupUnreadable(raw)
+    return []
+  }
+
+  if (!Array.isArray(parsed)) {
+    backupUnreadable(raw)
+    return []
+  }
+
+  const tasks: Task[] = []
+  for (const item of parsed) {
+    const task = toTask(item)
+    if (!task) {
+      continue
+    }
+    tasks.push(task)
+  }
+  return tasks
 }
 
 /**
@@ -34,27 +71,25 @@ export function saveTasks(tasks: Task[]): void {
   localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks))
 }
 
-function parseStoredTasks(raw: string): Task[] {
-  const parsed: unknown = JSON.parse(raw)
-  if (!Array.isArray(parsed)) {
-    return []
-  }
-
-  const tasks: Task[] = []
-  for (const item of parsed) {
-    const task = toTask(item)
-    if (!task) {
-      return []
+/**
+ * Copies unreadable raw storage to the backup key unless that key is already set.
+ * Failures while reading or writing the backup are ignored.
+ */
+function backupUnreadable(raw: string): void {
+  try {
+    if (localStorage.getItem(TASKS_BACKUP_KEY) !== null) {
+      return
     }
-    tasks.push(task)
+    localStorage.setItem(TASKS_BACKUP_KEY, raw)
+  } catch {
+    // loadTasks must not throw when the backup cannot be read or written.
   }
-  return tasks
 }
 
 /**
- * Accepts a value only when all four task fields are present with the correct
- * types and `id` is a non-empty string. Any invalid item fails the whole list.
- * Extra fields are dropped.
+ * Returns a task when all four fields are present with the correct types and
+ * `id` is a non-empty string. Returns null for a malformed item so the caller
+ * can skip it. Extra fields are dropped.
  */
 function toTask(value: unknown): Task | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
