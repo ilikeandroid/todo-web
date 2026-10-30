@@ -54,9 +54,11 @@ npm run lint
 
 ## Data storage
 
-Tasks are stored in the browser under the `localStorage` key `todo-web.tasks`. The value is a JSON array of tasks. Each task has `id` (string), `text` (string), `done` (boolean), and `createdAt` (ISO-8601 string).
+Tasks are stored in the browser under the `localStorage` key `todo-web.tasks`. The value is a JSON array of tasks. Each task has `id` (non-empty string), `text` (string), `done` (boolean), and `createdAt` (ISO-8601 string). New ids come from `crypto.randomUUID()`, which the browser provides only in a secure context (HTTPS or localhost).
 
-`loadTasks()` returns an empty array when that key is missing. It also returns an empty array when the stored value is invalid JSON, when any item is missing `id`, `text`, `done`, or `createdAt` or has the wrong type for one of those fields, or when reading `localStorage` throws (for example, access is denied). Loading does not throw, and it leaves corrupt data in place. The next `saveTasks()` call replaces whatever is stored under that key.
+`loadTasks()` returns an empty array when that key is missing. It also returns an empty array when the stored value is invalid JSON, when any item is missing `id`, `text`, `done`, or `createdAt`, has the wrong type for one of those fields, or has an empty `id`, or when reading `localStorage` throws (for example, access is denied). Loading does not throw, and it leaves corrupt data in place. One invalid item still rejects the whole list.
+
+`saveTasks()` replaces whatever is stored under that key. It can throw, for example `QuotaExceededError` when storage is full, or when storage access is denied. Callers should handle that.
 
 ## Coding rules
 

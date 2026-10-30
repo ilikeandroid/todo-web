@@ -50,11 +50,19 @@ describe('task storage', () => {
     expect(localStorage.getItem(TASKS_STORAGE_KEY)).toBe('[]')
   })
 
-  it('accepts items whose fields have the right types, including empty strings', () => {
-    const stored = [task({ id: '', text: '' })]
+  it('accepts an empty text when the other fields have the right types', () => {
+    const stored = [task({ text: '' })]
     localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(stored))
 
     expect(loadTasks()).toEqual(stored)
+  })
+
+  it('returns [] when any stored item has an empty id and leaves the value in place', () => {
+    const raw = JSON.stringify([task(), task({ id: '', text: 'Orphan' })])
+    localStorage.setItem(TASKS_STORAGE_KEY, raw)
+
+    expect(loadTasks()).toEqual([])
+    expect(localStorage.getItem(TASKS_STORAGE_KEY)).toBe(raw)
   })
 
   it('returns the four task fields when a stored item has extra properties', () => {

@@ -7,8 +7,9 @@ export const TASKS_STORAGE_KEY = 'todo-web.tasks'
  * Reads tasks from localStorage.
  *
  * Returns `[]` when the key is missing, the value is invalid JSON, the value
- * is not an array, any item has the wrong shape, or localStorage throws
- * (for example, access denied). Does not throw and does not overwrite storage.
+ * is not an array, any item has the wrong shape (including an empty `id`), or
+ * localStorage throws (for example, access denied). Does not throw and does
+ * not overwrite storage.
  */
 export function loadTasks(): Task[] {
   try {
@@ -22,7 +23,13 @@ export function loadTasks(): Task[] {
   }
 }
 
-/** Replaces the stored task list. */
+/**
+ * Replaces the stored task list.
+ *
+ * Can throw. `localStorage.setItem` raises `QuotaExceededError` when storage
+ * is full, and `SecurityError` (or a similar exception) when storage access is
+ * denied. Callers should handle that. This function does not catch those errors.
+ */
 export function saveTasks(tasks: Task[]): void {
   localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks))
 }
@@ -46,7 +53,8 @@ function parseStoredTasks(raw: string): Task[] {
 
 /**
  * Accepts a value only when all four task fields are present with the correct
- * types. Any invalid item fails the whole list. Extra fields are dropped.
+ * types and `id` is a non-empty string. Any invalid item fails the whole list.
+ * Extra fields are dropped.
  */
 function toTask(value: unknown): Task | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -64,6 +72,7 @@ function toTask(value: unknown): Task | null {
 
   if (
     typeof value.id !== 'string' ||
+    value.id === '' ||
     typeof value.text !== 'string' ||
     typeof value.done !== 'boolean' ||
     typeof value.createdAt !== 'string'

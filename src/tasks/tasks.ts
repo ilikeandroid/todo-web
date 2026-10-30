@@ -19,6 +19,7 @@ export type AddTaskOptions = {
  * Appends a not-done task.
  * Trims `text`. Empty or whitespace-only text returns `tasks` unchanged.
  * `id` defaults to `crypto.randomUUID()` and `createdAt` to `now` as an ISO string.
+ * `crypto.randomUUID()` is only available in a secure context (HTTPS or localhost).
  */
 export function addTask(tasks: Task[], text: string, options?: AddTaskOptions): Task[] {
   const trimmed = text.trim()
