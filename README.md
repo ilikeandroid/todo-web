@@ -52,6 +52,12 @@ The smoke test starts the dev server, loads the page, and checks for the "To-do"
 npm run lint
 ```
 
+## Data storage
+
+Tasks are stored in the browser under the `localStorage` key `todo-web.tasks`. The value is a JSON array of tasks. Each task has `id` (string), `text` (string), `done` (boolean), and `createdAt` (ISO-8601 string).
+
+`loadTasks()` returns an empty array when that key is missing. It also returns an empty array when the stored value is invalid JSON, when any item is missing `id`, `text`, `done`, or `createdAt` or has the wrong type for one of those fields, or when reading `localStorage` throws (for example, access is denied). Loading does not throw, and it leaves corrupt data in place. The next `saveTasks()` call replaces whatever is stored under that key.
+
 ## Coding rules
 
 - TypeScript strict mode is enabled (`"strict": true` in `tsconfig.app.json` and `tsconfig.node.json`).
