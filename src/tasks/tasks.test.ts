@@ -167,4 +167,13 @@ describe('editTask', () => {
     expect(editTask(tasks, 'missing', 'Updated')).toBe(tasks)
     expect(editTask(tasks, 'missing', '   ')).toBe(tasks)
   })
+
+  it('returns the same array when the trimmed text is unchanged', () => {
+    const tasks = list(task(), task({ id: 'task-2', text: 'Walk dog', done: true }))
+
+    expect(editTask(tasks, 'task-1', 'Buy milk')).toBe(tasks)
+    expect(editTask(tasks, 'task-1', '  Buy milk  ')).toBe(tasks)
+    expect(editTask(tasks, 'task-2', 'Walk dog')).toBe(tasks)
+    expect(tasks).toEqual([task(), task({ id: 'task-2', text: 'Walk dog', done: true })])
+  })
 })

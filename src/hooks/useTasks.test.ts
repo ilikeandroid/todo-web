@@ -232,4 +232,104 @@ describe('useTasks', () => {
     expect(result.current.saveError).toBe("Couldn't save, changes may be lost")
     expect(loadTasks().map((task) => task.text)).toEqual(['Buy milk', 'Walk dog'])
   })
+
+  it('saves a trimmed edit and keeps done state and order', () => {
+    const { result } = renderHook(() => useTasks())
+    const saveTasksSpy = vi.spyOn(storage, 'saveTasks')
+
+    act(() => {
+      result.current.add('Buy milk')
+      result.current.add('Walk dog')
+    })
+    const milkId = result.current.tasks[0]?.id ?? ''
+    act(() => {
+      result.current.toggle(milkId)
+    })
+    saveTasksSpy.mockClear()
+
+    let saved = false
+    act(() => {
+      saved = result.current.edit(milkId, '  Buy oat milk  ')
+    })
+
+    expect(saved).toBe(true)
+    expect(result.current.tasks.map((task) => ({ text: task.text, done: task.done }))).toEqual([
+      { text: 'Buy oat milk', done: true },
+      { text: 'Walk dog', done: false },
+    ])
+    expect(result.current.tasks[0]?.id).toBe(milkId)
+    expect(saveTasksSpy).toHaveBeenCalledTimes(1)
+    expect(saveTasksSpy.mock.calls[0]?.[0]).toEqual(result.current.tasks)
+    expect(loadTasks()).toEqual(result.current.tasks)
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('does not save when the trimmed edit is unchanged or empty', () => {
+    const { result } = renderHook(() => useTasks())
+
+    act(() => {
+      result.current.add('Buy milk')
+    })
+    const id = result.current.tasks[0]?.id ?? ''
+    const saveTasksSpy = vi.spyOn(storage, 'saveTasks')
+
+    let unchanged = true
+    let empty = true
+    act(() => {
+      unchanged = result.current.edit(id, '  Buy milk  ')
+      empty = result.current.edit(id, '   ')
+    })
+
+    expect(unchanged).toBe(false)
+    expect(empty).toBe(false)
+    expect(result.current.tasks.map((task) => task.text)).toEqual(['Buy milk'])
+    expect(saveTasksSpy).not.toHaveBeenCalled()
+    expect(loadTasks().map((task) => task.text)).toEqual(['Buy milk'])
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('keeps an edited task and sets saveError when saveTasks throws', () => {
+    const { result } = renderHook(() => useTasks())
+    act(() => {
+      result.current.add('Buy milk')
+    })
+    const id = result.current.tasks[0]?.id ?? ''
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+
+    let saved = false
+    act(() => {
+      saved = result.current.edit(id, 'Buy oat milk')
+    })
+
+    expect(saved).toBe(true)
+    expect(result.current.tasks[0]?.text).toBe('Buy oat milk')
+    expect(result.current.saveError).toBe("Couldn't save, changes may be lost")
+    expect(loadTasks()[0]?.text).toBe('Buy milk')
+  })
+
+  it('edits the latest list when another change happened in the same turn', () => {
+    const { result } = renderHook(() => useTasks())
+
+    act(() => {
+      result.current.add('Buy milk')
+      result.current.add('Walk dog')
+    })
+    const milkId = result.current.tasks[0]?.id ?? ''
+
+    act(() => {
+      result.current.toggle(milkId)
+      expect(result.current.edit(milkId, 'Buy oat milk')).toBe(true)
+    })
+
+    expect(result.current.tasks.map((task) => ({ text: task.text, done: task.done }))).toEqual([
+      { text: 'Buy oat milk', done: true },
+      { text: 'Walk dog', done: false },
+    ])
+    expect(loadTasks().map((task) => ({ text: task.text, done: task.done }))).toEqual([
+      { text: 'Buy oat milk', done: true },
+      { text: 'Walk dog', done: false },
+    ])
+  })
 })
