@@ -1,6 +1,6 @@
 # todo-web
 
-A to-do web app. This repository currently contains the runnable project scaffold: Vite, React, and TypeScript, with ESLint, Vitest, and Playwright.
+A to-do web app. Add tasks in the browser and they stay on this device after a reload. The project is Vite, React, and TypeScript, with ESLint, Vitest, and Playwright.
 
 ## Install
 
@@ -30,6 +30,12 @@ npm run build
 npm run preview
 ```
 
+## Using the app
+
+Type a task in the Task field and press Add, or press Enter. The task is added to the bottom of the list, the field clears, and focus stays in the field. Leave the field empty, or type only spaces, and nothing is added; the form shows "Enter a task". That hint goes away when you type again or add a task. When the list is empty, the page shows "No tasks yet".
+
+Tasks are saved in this browser (see [Data storage](#data-storage)). Reload the page and the same list is still there. If the browser cannot save, the page shows "Couldn't save, changes may be lost" and keeps running.
+
 ## Test
 
 Unit tests (Vitest):
@@ -44,7 +50,7 @@ Browser tests (Playwright, Chromium):
 npm run test:e2e
 ```
 
-The smoke test starts the dev server, loads the page, and checks for the "To-do" heading.
+The smoke test starts the dev server, loads the page, and checks for the "To-do" heading. `e2e/add-tasks.spec.ts` adds two tasks, reloads, and checks that both are still listed.
 
 ## Lint
 
