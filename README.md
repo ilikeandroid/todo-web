@@ -32,9 +32,11 @@ npm run preview
 
 ## Using the app
 
-Type a task in the Task field and press Add, or press Enter. The task is added to the bottom of the list, the field clears, and focus stays in the field. Leave the field empty, or type only spaces, and nothing is added; the form shows "Enter a task". That hint goes away when you type again or add a task. When the list is empty, the page shows "No tasks yet".
+Type a task in the Task field and press Add, or press Enter. The task is added to the bottom of the list, the field clears, and focus stays in the field. Leave the field empty, or type only spaces, and nothing is added; the form shows "Enter a task". That hint goes away when you type again or add a task. Holding Enter does not submit the field again. When the list is empty, the page shows "No tasks yet".
 
-Tasks are saved in this browser (see [Data storage](#data-storage)). Reload the page and the same list is still there. If the browser cannot save, the page shows "Couldn't save, changes may be lost" and keeps running.
+Check a task's checkbox to mark it done. The task text is shown with a strikethrough. Check the box again to mark it not done. Press Delete beside a task to remove it. Delete does not ask you to confirm.
+
+Tasks are saved in this browser (see [Data storage](#data-storage)). Reload the page and the same list is still there, including which tasks are done. If the browser cannot save, the page shows "Couldn't save, changes may be lost" and keeps running.
 
 ## Test
 
@@ -50,7 +52,7 @@ Browser tests (Playwright, Chromium):
 npm run test:e2e
 ```
 
-The smoke test starts the dev server, loads the page, and checks for the "To-do" heading. `e2e/add-tasks.spec.ts` adds two tasks, reloads, and checks that both are still listed.
+The smoke test starts the dev server, loads the page, and checks for the "To-do" heading. `e2e/add-tasks.spec.ts` adds two tasks, reloads, and checks that both are still listed. `e2e/toggle-delete.spec.ts` marks a task done, deletes a task, reloads, and checks that state. It also checks that a repeated Enter on an empty field does not show "Enter a task", and that pressing Enter once adds one task.
 
 ## Lint
 

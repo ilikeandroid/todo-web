@@ -17,9 +17,13 @@ test('added tasks are still listed after a reload', async ({ page }) => {
   await task.press('Enter')
 
   const items = page.getByRole('listitem')
-  await expect(items).toHaveText(['Buy milk', 'Walk dog'])
+  await expect(items).toHaveCount(2)
+  await expect(items.nth(0).getByRole('checkbox')).toHaveAccessibleName('Buy milk')
+  await expect(items.nth(1).getByRole('checkbox')).toHaveAccessibleName('Walk dog')
 
   await page.reload()
 
-  await expect(items).toHaveText(['Buy milk', 'Walk dog'])
+  await expect(items).toHaveCount(2)
+  await expect(items.nth(0).getByRole('checkbox')).toHaveAccessibleName('Buy milk')
+  await expect(items.nth(1).getByRole('checkbox')).toHaveAccessibleName('Walk dog')
 })

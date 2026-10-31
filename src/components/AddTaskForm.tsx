@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 
 const EMPTY_TASK_HINT = 'Enter a task'
@@ -12,6 +12,8 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   const [text, setText] = useState('')
   const [hint, setHint] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fieldId = useId()
+  const hintId = useId()
 
   function commit() {
     if (!onAdd(text)) {
@@ -30,15 +32,16 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key !== 'Enter' || event.repeat || event.nativeEvent.isComposing) {
+    if (event.key !== 'Enter') {
       return
     }
 
-    // Browsers submit the form on Enter. Cancel that and submit once so the
-    // task is not added twice. jsdom does not submit on Enter; requestSubmit
-    // takes the same onSubmit path in tests.
-    event.preventDefault()
-    event.currentTarget.form?.requestSubmit()
+    // A normal Enter is left for the form's native submit, which runs once.
+    // Repeat and IME keydowns still use that default in browsers. Cancel them
+    // so a held Enter does not submit the cleared field and flash the hint.
+    if (event.repeat || event.nativeEvent.isComposing) {
+      event.preventDefault()
+    }
   }
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
@@ -50,19 +53,19 @@ export function AddTaskForm({ onAdd }: AddTaskFormProps) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <label htmlFor="task-text">Task</label>
+      <label htmlFor={fieldId}>Task</label>
       <input
-        id="task-text"
+        id={fieldId}
         type="text"
         ref={inputRef}
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         aria-invalid={hint === null ? undefined : true}
-        aria-describedby={hint === null ? undefined : 'task-hint'}
+        aria-describedby={hint === null ? undefined : hintId}
       />
       <button type="submit">Add</button>
-      {hint !== null ? <p id="task-hint">{hint}</p> : null}
+      {hint !== null ? <p id={hintId}>{hint}</p> : null}
     </form>
   )
 }
