@@ -18,8 +18,18 @@ function task(overrides: Partial<Task> = {}): Task {
 function renderList(tasks: Task[]) {
   const onToggle = vi.fn<(id: string) => void>()
   const onDelete = vi.fn<(id: string) => void>()
-  render(<TaskList tasks={tasks} onToggle={onToggle} onDelete={onDelete} />)
-  return { onToggle, onDelete }
+  const onEdit = vi.fn<(id: string, text: string) => boolean>(() => true)
+  const onEmptyFocus = vi.fn<() => void>()
+  render(
+    <TaskList
+      tasks={tasks}
+      onToggle={onToggle}
+      onDelete={onDelete}
+      onEdit={onEdit}
+      onEmptyFocus={onEmptyFocus}
+    />,
+  )
+  return { onToggle, onDelete, onEdit, onEmptyFocus }
 }
 
 describe('TaskList', () => {
@@ -34,7 +44,7 @@ describe('TaskList', () => {
     renderList([task(), task({ id: 'task-2', text: 'Walk dog', done: true })])
 
     expect(screen.getByRole('list')).toBeInTheDocument()
-    expect(screen.getAllByRole('checkbox').map((box) => box.closest('label')?.textContent)).toEqual([
+    expect(screen.getAllByRole('checkbox').map((box) => box.getAttribute('aria-label'))).toEqual([
       'Buy milk',
       'Walk dog',
     ])
@@ -62,6 +72,9 @@ describe('TaskList', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Walk dog' }))
     expect(onToggle).toHaveBeenCalledExactlyOnceWith('task-2')
+
+    const editWalk = screen.getByRole('button', { name: 'Edit Walk dog' })
+    expect(editWalk).toHaveAttribute('aria-label', 'Edit Walk dog')
 
     const deleteWalk = screen.getByRole('button', { name: 'Delete Walk dog' })
     expect(deleteWalk).toHaveAttribute('aria-label', 'Delete Walk dog')

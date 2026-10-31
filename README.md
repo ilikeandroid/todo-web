@@ -34,9 +34,15 @@ npm run preview
 
 Type a task in the Task field and press Add, or press Enter. The task is added to the bottom of the list, the field clears, and focus stays in the field. Leave the field empty, or type only spaces, and nothing is added; the form shows "Enter a task". That hint goes away when you type again or add a task. Holding Enter does not submit the field again. When the list is empty, the page shows "No tasks yet".
 
-Check a task's checkbox to mark it done. The task text is shown with a strikethrough. Check the box again to mark it not done. Press Delete beside a task to remove it. Delete does not ask you to confirm.
+Check a task's checkbox to mark it done. The task text is shown with a strikethrough. Check the box again to mark it not done. Press Delete beside a task to remove it. Delete does not ask you to confirm. After a delete, focus moves to the next task's checkbox, then the previous task's checkbox if there is no next task, then the Task input if the list is empty.
 
-Tasks are saved in this browser (see [Data storage](#data-storage)). Reload the page and the same list is still there, including which tasks are done. If the browser cannot save, the page shows "Couldn't save, changes may be lost" and keeps running.
+Press Edit beside a task, or double-click the task text, to change its wording. The text becomes a field filled with the current wording, and that field is focused. The field's accessible name is "Edit" plus the current wording. Press Enter, or leave the field, to save. Extra space at the ends is removed. A done task stays done, and the list order stays the same. If the trimmed wording is unchanged, nothing is saved. Focus returns to that task's Edit button after a save or a cancel.
+
+Press Escape to cancel. The original wording comes back. Leaving the field right after Escape does not save the cancelled wording. Pressing Enter does not save a second time when the field then blurs.
+
+If you press Enter and the field is empty or only spaces, the edit is rejected. The original wording is kept, the field stays open so you can correct it, and the page shows "Enter a task" (the same hint as adding a task). Leaving the field while it is empty or only spaces cancels quietly and restores the original text, with no hint.
+
+Tasks are saved in this browser (see [Data storage](#data-storage)). Reload the page and the same list is still there, including which tasks are done and any wording you changed. If the browser cannot save, the page shows "Couldn't save, changes may be lost" and keeps running.
 
 ## Test
 
@@ -52,7 +58,7 @@ Browser tests (Playwright, Chromium):
 npm run test:e2e
 ```
 
-The smoke test starts the dev server, loads the page, and checks for the "To-do" heading. `e2e/add-tasks.spec.ts` adds two tasks, reloads, and checks that both are still listed. `e2e/toggle-delete.spec.ts` marks a task done, deletes a task, reloads, and checks that state. It also checks that a repeated Enter on an empty field does not show "Enter a task", and that pressing Enter once adds one task.
+The smoke test starts the dev server, loads the page, and checks for the "To-do" heading. `e2e/add-tasks.spec.ts` adds two tasks, reloads, and checks that both are still listed. `e2e/toggle-delete.spec.ts` marks a task done, deletes a task, reloads, and checks that state. It also checks that a repeated Enter on an empty field does not show "Enter a task", and that pressing Enter once adds one task. `e2e/edit.spec.ts` edits a task, reloads, and checks that the new wording is still listed. It also checks that focus after a delete lands on the next checkbox, the previous checkbox, or the Task input.
 
 ## Lint
 

@@ -5,8 +5,9 @@ import type { Task } from './types.ts'
  *
  * Each function returns a new array and does not mutate `tasks` or its items.
  * Rejected input returns the same array reference: empty or whitespace-only
- * text for `addTask` and `editTask`, and an id that is not in the list for
- * `toggleTask`, `deleteTask`, and `editTask`.
+ * text for `addTask` and `editTask`, an id that is not in the list for
+ * `toggleTask`, `deleteTask`, and `editTask`, and text that already matches
+ * after trimming for `editTask`.
  */
 
 /** Overrides for id and clock. Used by tests; production callers can omit this. */
@@ -63,7 +64,8 @@ export function deleteTask(tasks: Task[], id: string): Task[] {
 
 /**
  * Replaces `text` for every task with `id`.
- * Trims `text`. Empty or whitespace-only text, or an unknown id, returns `tasks` unchanged.
+ * Trims `text`. Empty or whitespace-only text, an unknown id, or text that
+ * already equals the task after trimming returns `tasks` unchanged.
  */
 export function editTask(tasks: Task[], id: string, text: string): Task[] {
   const trimmed = text.trim()
@@ -72,6 +74,10 @@ export function editTask(tasks: Task[], id: string, text: string): Task[] {
   }
 
   if (!tasks.some((task) => task.id === id)) {
+    return tasks
+  }
+
+  if (tasks.every((task) => task.id !== id || task.text === trimmed)) {
     return tasks
   }
 
