@@ -14,15 +14,15 @@ type TaskListProps = {
 
 export function TaskList({ tasks, onToggle, onDelete, onEdit, onEmptyFocus }: TaskListProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
-  const deleteRefs = useRef(new Map<string, HTMLButtonElement>())
+  const checkboxRefs = useRef(new Map<string, HTMLInputElement>())
   const pendingFocus = useRef<string | 'add' | null>(null)
 
-  const setDeleteRef = useCallback((id: string, node: HTMLButtonElement | null) => {
+  const setCheckboxRef = useCallback((id: string, node: HTMLInputElement | null) => {
     if (node) {
-      deleteRefs.current.set(id, node)
+      checkboxRefs.current.set(id, node)
       return
     }
-    deleteRefs.current.delete(id)
+    checkboxRefs.current.delete(id)
   }, [])
 
   function startEdit(id: string) {
@@ -55,7 +55,7 @@ export function TaskList({ tasks, onToggle, onDelete, onEdit, onEmptyFocus }: Ta
       onEmptyFocus()
       return
     }
-    deleteRefs.current.get(target)?.focus()
+    checkboxRefs.current.get(target)?.focus()
   }, [tasks, onEmptyFocus])
 
   if (tasks.length === 0) {
@@ -74,7 +74,7 @@ export function TaskList({ tasks, onToggle, onDelete, onEdit, onEmptyFocus }: Ta
           onEdit={onEdit}
           onStartEdit={startEdit}
           onStopEdit={stopEdit}
-          deleteButtonRef={(node) => setDeleteRef(task.id, node)}
+          checkboxRef={(node) => setCheckboxRef(task.id, node)}
         />
       ))}
     </ul>

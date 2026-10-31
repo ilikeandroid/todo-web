@@ -12,7 +12,7 @@ type TaskItemProps = {
   onEdit: (id: string, text: string) => boolean
   onStartEdit: (id: string) => void
   onStopEdit: (id: string) => void
-  deleteButtonRef: Ref<HTMLButtonElement>
+  checkboxRef: Ref<HTMLInputElement>
 }
 
 const doneStyle: CSSProperties = { textDecoration: 'line-through' }
@@ -34,7 +34,7 @@ export function TaskItem({
   onEdit,
   onStartEdit,
   onStopEdit,
-  deleteButtonRef,
+  checkboxRef,
 }: TaskItemProps) {
   const [draft, setDraft] = useState(task.text)
   const [hint, setHint] = useState<string | null>(null)
@@ -129,6 +129,7 @@ export function TaskItem({
     <li>
       <input
         type="checkbox"
+        ref={checkboxRef}
         checked={task.done}
         onChange={() => onToggle(task.id)}
         aria-label={task.text}
@@ -171,7 +172,6 @@ export function TaskItem({
       )}
       <button
         type="button"
-        ref={deleteButtonRef}
         aria-label={`Delete ${task.text}`}
         onClick={() => onDelete(task.id)}
         style={deleteStyle}

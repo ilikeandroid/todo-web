@@ -438,7 +438,7 @@ describe('App', () => {
     expect(screen.getAllByRole('textbox', { name: /^Edit / })).toHaveLength(1)
   })
 
-  it('moves focus to the next task Delete button after a delete', () => {
+  it('moves focus to the next task checkbox after a delete', () => {
     render(<App />)
     typeAndAdd('Buy milk')
     typeAndAdd('Walk dog')
@@ -446,13 +446,13 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Walk dog' }))
 
-    expect(screen.getByRole('button', { name: 'Delete Write tests' })).toHaveFocus()
-    expect(screen.getByRole('button', { name: 'Delete Buy milk' })).not.toHaveFocus()
+    expect(screen.getByRole('checkbox', { name: 'Write tests' })).toHaveFocus()
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).not.toHaveFocus()
     expect(document.activeElement).not.toBe(document.body)
     expect(screen.queryByRole('checkbox', { name: 'Walk dog' })).not.toBeInTheDocument()
   })
 
-  it('moves focus to the previous task Delete button when the last task is deleted', () => {
+  it('moves focus to the previous task checkbox when the last task is deleted', () => {
     render(<App />)
     typeAndAdd('Buy milk')
     typeAndAdd('Walk dog')
@@ -460,8 +460,8 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Write tests' }))
 
-    expect(screen.getByRole('button', { name: 'Delete Walk dog' })).toHaveFocus()
-    expect(screen.getByRole('button', { name: 'Delete Buy milk' })).not.toHaveFocus()
+    expect(screen.getByRole('checkbox', { name: 'Walk dog' })).toHaveFocus()
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).not.toHaveFocus()
     expect(document.activeElement).not.toBe(document.body)
   })
 
