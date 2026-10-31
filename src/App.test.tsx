@@ -14,7 +14,15 @@ function typeAndAdd(value: string, method: 'click' | 'enter' = 'click') {
   const input = taskInput()
   fireEvent.change(input, { target: { value } })
   if (method === 'enter') {
-    fireEvent.keyDown(input, { key: 'Enter' })
+    // jsdom does not implicit-submit on Enter. Browsers do, unless keydown was cancelled.
+    const proceed = fireEvent.keyDown(input, { key: 'Enter' })
+    if (proceed) {
+      const form = input.closest('form')
+      if (!form) {
+        throw new Error('input is not in a form')
+      }
+      fireEvent.submit(form)
+    }
   } else {
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
   }
@@ -72,7 +80,7 @@ describe('App', () => {
     typeAndAdd('Buy milk')
     typeAndAdd('Walk dog')
 
-    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+    expect(screen.getAllByRole('listitem').map((item) => item.querySelector('span')?.textContent)).toEqual([
       'Buy milk',
       'Walk dog',
     ])
@@ -137,5 +145,95 @@ describe('App', () => {
     expect(alert).toBeVisible()
     expect(screen.getByRole('listitem')).toHaveTextContent('Buy milk')
     expect(screen.queryByText('No tasks yet')).not.toBeInTheDocument()
+  })
+
+  it('toggles a task done and not done, with strikethrough, and saves both', () => {
+    const { unmount } = render(<App />)
+    typeAndAdd('Buy milk')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Buy milk' }))
+
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).toBeChecked()
+    expect(screen.getByText('Buy milk', { selector: 'span' })).toHaveStyle({
+      textDecoration: 'line-through',
+    })
+    expect(loadTasks()[0]?.done).toBe(true)
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Buy milk' }))
+
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).not.toBeChecked()
+    expect(screen.getByText('Buy milk', { selector: 'span' })).not.toHaveStyle({
+      textDecoration: 'line-through',
+    })
+    expect(loadTasks()[0]?.done).toBe(false)
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Buy milk' }))
+    unmount()
+    render(<App />)
+
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).toBeChecked()
+    expect(screen.getByText('Buy milk', { selector: 'span' })).toHaveStyle({
+      textDecoration: 'line-through',
+    })
+  })
+
+  it('deletes a task without confirming and saves the remaining list', () => {
+    const confirm = vi.spyOn(window, 'confirm')
+    const { unmount } = render(<App />)
+    typeAndAdd('Buy milk')
+    typeAndAdd('Walk dog')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Buy milk' }))
+
+    expect(confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('checkbox', { name: 'Buy milk' })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Walk dog' })).toBeInTheDocument()
+    expect(screen.queryByText('No tasks yet')).not.toBeInTheDocument()
+    expect(loadTasks().map((task) => task.text)).toEqual(['Walk dog'])
+
+    unmount()
+    render(<App />)
+    expect(screen.queryByRole('checkbox', { name: 'Buy milk' })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Walk dog' })).toBeInTheDocument()
+  })
+
+  it('shows the save error when toggling fails to save', () => {
+    saveTasks(addTask([], 'Buy milk', { id: 'task-1', now: createdAt }))
+    render(<App />)
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Buy milk' }))
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent("Couldn't save, changes may be lost")
+    expect(alert).toBeVisible()
+    expect(screen.getByRole('checkbox', { name: 'Buy milk' })).toBeChecked()
+    expect(screen.getByText('Buy milk', { selector: 'span' })).toHaveStyle({
+      textDecoration: 'line-through',
+    })
+    expect(loadTasks()[0]?.done).toBe(false)
+  })
+
+  it('shows the save error when deleting fails to save', () => {
+    saveTasks([
+      ...addTask([], 'Buy milk', { id: 'task-1', now: createdAt }),
+      ...addTask([], 'Walk dog', { id: 'task-2', now: createdAt }),
+    ])
+    render(<App />)
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('The quota has been exceeded.', 'QuotaExceededError')
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Buy milk' }))
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent("Couldn't save, changes may be lost")
+    expect(alert).toBeVisible()
+    expect(screen.queryByRole('checkbox', { name: 'Buy milk' })).not.toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'Walk dog' })).toBeInTheDocument()
+    expect(loadTasks().map((task) => task.text)).toEqual(['Buy milk', 'Walk dog'])
   })
 })
