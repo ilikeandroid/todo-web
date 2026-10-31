@@ -52,6 +52,14 @@ The smoke test starts the dev server, loads the page, and checks for the "To-do"
 npm run lint
 ```
 
+## Data storage
+
+Tasks are stored in the browser under the `localStorage` key `todo-web.tasks`. The value is a JSON array of tasks. Each task has `id` (non-empty string), `text` (string), `done` (boolean), and `createdAt` (ISO-8601 string). New ids come from `crypto.randomUUID()`, which the browser provides only in a secure context (HTTPS or localhost).
+
+`loadTasks()` never throws. If the key is missing, it returns an empty array and does not write a backup. If the stored value is a JSON array, it keeps every valid task and skips malformed items (a missing field, a wrong type, or an empty `id`). That stored array is left as it is, and no backup is written for skipped items. If the stored value is not valid JSON or not an array, `loadTasks()` copies that raw string to the `localStorage` key `todo-web.tasks.backup` when the backup key is not already set, then returns an empty array. An existing backup, including an empty string, is not overwritten. If reading storage or writing the backup throws, `loadTasks()` still returns an empty array.
+
+`saveTasks()` replaces whatever is stored under `todo-web.tasks`. It can throw, for example `QuotaExceededError` when storage is full, or when storage access is denied. Callers should handle that.
+
 ## Coding rules
 
 - TypeScript strict mode is enabled (`"strict": true` in `tsconfig.app.json` and `tsconfig.node.json`).
